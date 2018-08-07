@@ -200,7 +200,7 @@ where
 	let output_span = first_last(&output);
 	let gen_function = respan(gen_function.into(), &output_span);
 	let body_inner = quote_cs! {
-			#gen_function (move || -> #output #gen_body)
+			#gen_function (unsafe { static move || -> #output #gen_body })
 	};
 	let body_inner = if boxed {
 		let body = quote_cs! { ::futures::__rt::std::boxed::Box::new(#body_inner) };
@@ -354,6 +354,7 @@ pub fn async_block(input: TokenStream) -> TokenStream {
 	// that we get the `call_site` span instead of the default span.
 	let span = Span::call_site();
 	syn::token::Paren(span).surround(&mut tokens, |tokens| {
+		syn::token::Static(span).to_tokens(tokens);
 		syn::token::Move(span).to_tokens(tokens);
 		syn::token::OrOr([span, span]).to_tokens(tokens);
 		syn::token::Brace(span).surround(tokens, |tokens| {
